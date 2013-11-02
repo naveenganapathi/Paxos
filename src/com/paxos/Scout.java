@@ -1,5 +1,12 @@
 package com.paxos;
 
-public class Scout {
+import com.paxos.common.Process;
+public class Scout extends Process {
+
+	@Override
+	public void body() {
+		// TODO Auto-generated method stub
+		
+	}
 
 }
