@@ -3,8 +3,8 @@ package com.paxos.common;
 import com.paxos.Main;
 
 public abstract class Process extends Thread{
-	String processId;
-	Main main;
+	protected String processId;
+	protected Main main;
 	Queue<PaxosMessage> messages=new Queue<PaxosMessage>();
 	
 	public void run(){
@@ -12,7 +12,7 @@ public abstract class Process extends Thread{
 		main.removeProcess(processId);
 	}
 	
-	abstract void body();
+	protected abstract void body();
 	
 	public void sendMessage(String destProcessId, PaxosMessage msg){
 		main.sendMessage(destProcessId, msg);
