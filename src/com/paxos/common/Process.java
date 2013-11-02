@@ -12,7 +12,7 @@ public abstract class Process extends Thread{
 		main.removeProcess(processId);
 	}
 	
-	abstract void body();
+	abstract public void body();
 	
 	public void sendMessage(String destProcessId, PaxosMessage msg){
 		main.sendMessage(destProcessId, msg);
