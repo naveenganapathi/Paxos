@@ -34,6 +34,9 @@ public class Ballot {
 				return 1;
 		}
 	}
+	public String getString(){
+		return processId+":"+ballotId;
+	}
 	@Override
 	public String toString() {
 		return "Ballot [ballotId=" + ballotId + ", processId=" + processId
