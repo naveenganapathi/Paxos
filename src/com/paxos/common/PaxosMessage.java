@@ -4,7 +4,7 @@ import java.util.Set;
 
 public class PaxosMessage {
 	PaxosMessageEnum messageType;
-	int srcId;
+	String srcId;
 	Ballot ballot;
 	Set<PValue> accepted;
 	int slot_number;
@@ -15,10 +15,10 @@ public class PaxosMessage {
 	public void setMessageType(PaxosMessageEnum messageType) {
 		this.messageType = messageType;
 	}
-	public int getSrcId() {
+	public String getSrcId() {
 		return srcId;
 	}
-	public void setSrcId(int srcId) {
+	public void setSrcId(String srcId) {
 		this.srcId = srcId;
 	}
 	public Ballot getBallot() {

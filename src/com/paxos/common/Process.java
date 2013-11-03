@@ -6,7 +6,7 @@ public abstract class Process extends Thread{
 
 	public String processId;
 	public Main main;
-	Queue<PaxosMessage> messages=new Queue<PaxosMessage>();
+	public Queue<PaxosMessage> messages=new Queue<PaxosMessage>();
 	
 	public void run(){
 		body();
@@ -24,7 +24,7 @@ public abstract class Process extends Thread{
 		messages.enqueue(msg);
 	}
 	
-	PaxosMessage getNextMessage(){
+	public PaxosMessage getNextMessage(){
 		return messages.dequeue();
 	}
 	
