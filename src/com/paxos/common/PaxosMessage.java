@@ -8,6 +8,7 @@ public class PaxosMessage {
 	Ballot ballot;
 	Set<PValue> accepted;
 	int slot_number;
+	Integer numClientRequests;
 	Request request;
 	public PaxosMessageEnum getMessageType() {
 		return messageType;
@@ -45,10 +46,19 @@ public class PaxosMessage {
 	public void setRequest(Request request) {
 		this.request = request;
 	}
+		
+	public Integer getNumClientRequests() {
+		return numClientRequests;
+	}
+	public void setNumClientRequests(Integer numClientRequests) {
+		this.numClientRequests = numClientRequests;
+	}
 	@Override
 	public String toString() {
 		return "PaxosMessage [messageType=" + messageType + ", srcId=" + srcId
 				+ ", ballot=" + ballot + ", accepted=" + accepted
-				+ ", slot_number=" + slot_number + ", request=" + request + "]";
+				+ ", slot_number=" + slot_number + ", numClientRequests="
+				+ numClientRequests + ", request=" + request + "]";
 	}
+	
 }

@@ -8,7 +8,10 @@ public enum PaxosMessageEnum {
 	PREEMPT("preempt"),
 	ADOPTED("adopted"),
 	PROPOSE("propose"),
-	PERFORM("perform");
+	PERFORM("perform"),
+	DECISION("decision"),
+	REQUEST("request"),
+	CLIENTINPUT("client_input");
 	String messageLabel;
 	PaxosMessageEnum(String message) {
 		this.messageLabel=message;
