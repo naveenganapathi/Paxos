@@ -29,7 +29,7 @@ public class Leader extends Process {
 
 	@Override
 	public void body() {
-		System.out.println("spawned"+this.processId);
+	//	System.out.println("spawned"+this.processId);
 		new Scout(main, "S:"+ballot.getString(), processId, acceptors, ballot);
 		
 		while(true){
@@ -47,7 +47,7 @@ public class Leader extends Process {
 			}
 			if(msg.getMessageType().equals(PaxosMessageEnum.ADOPTED)) {
 				if(ballot.equals(msg.getBallot())) {
-					System.out.println(this.processId+"working! msg:"+msg);
+			//		System.out.println(this.processId+"working! msg:"+msg);
 					Map<Integer,Ballot> pmax = new HashMap<Integer,Ballot>();
 					for(PValue pvalue:msg.getAccepted()) {
 						Ballot bal = pmax.get(pvalue.getSlot_number());
@@ -60,15 +60,15 @@ public class Leader extends Process {
 					}
 				//	System.out.println(this.processId+"proposals:"+proposals);
 					for(int i:proposals.keySet()) {
-						System.out.println(this.processId+"creating commander for proposals"+proposals.get(i));
+						System.out.println(this.processId+"creating commander for proposals:"+proposals.get(i).getClientId()+","+proposals.get(i).getClientCommandId());
 						new Commander(main, "C:"+ballot.getString()+":"+msg.getSlot_number(),processId,acceptors,replicas,ballot,i,proposals.get(i));
 					}
 					active = true;
 				}
 			}
 			if(msg.getMessageType().equals(PaxosMessageEnum.PREEMPT)) {
-				System.out.println(this.processId+" ballot pre-empted!");
-				System.out.println("comparing "+ballot+" with "+msg.getBallot()+", res:"+ballot.compareWith(msg.getBallot()));
+			//	System.out.println(this.processId+" ballot pre-empted!");
+			//	System.out.println("comparing "+ballot+" with "+msg.getBallot()+", res:"+ballot.compareWith(msg.getBallot()));
 				if(ballot.compareWith(msg.getBallot()) < 0) {
 					ballot = new Ballot(processId, msg.getBallot().getBallotId()+1);
 					System.out.println(this.processId+"trying with new ballot"+ballot);

@@ -55,6 +55,7 @@ public class Commander extends Process{
 					preempt.setMessageType(PaxosMessageEnum.PREEMPT);
 					preempt.setBallot(msg.getBallot());
 					main.sendMessage(this.leader, preempt);
+					System.err.println("PREEMPTED!! for ballot:"+ballot);
 					isPreempt=true;
 					break;
 				}
@@ -66,7 +67,8 @@ public class Commander extends Process{
 			decision.setSlot_number(slot_number);
 			decision.setRequest(request);
 			decision.setMessageType(PaxosMessageEnum.PERFORM);
-			System.err.println(decision);
+			System.err.println(this.processId+" NOT PREEMPTED!!"+decision.getRequest());
+			//System.err.println(decision);
 			for(String replica: replicas) {
 				main.sendMessage(replica, decision);
 			}

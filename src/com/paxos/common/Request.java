@@ -4,10 +4,12 @@ public class Request {
 	String clientId;
 	int clientCommandId;
 	String command;
-	public Request(String clientId, int clientCommandId, String command) {
+	BankCommand bCommand;
+	public Request(String clientId, int clientCommandId, String command,BankCommand bCommand) {
 		this.clientId=clientId;
 		this.clientCommandId=clientCommandId;
 		this.command=command;
+		this.bCommand = bCommand;
 	}
 	public String getClientId() {
 		return clientId;
@@ -24,25 +26,33 @@ public class Request {
 	public String getCommand() {
 		return command;
 	}
-	public void setCommand(String operation) {
-		this.command = operation;
+	public void setCommand(String command) {
+		this.command = command;
+	}
+	public BankCommand getbCommand() {
+		return bCommand;
+	}
+	public void setbCommand(BankCommand bCommand) {
+		this.bCommand = bCommand;
 	}
 	@Override
 	public String toString() {
 		return "Request [clientId=" + clientId + ", clientCommandId="
-				+ clientCommandId + ", command=" + command + "]";
+				+ clientCommandId + ", command=" + command + ", bCommand="
+				+ bCommand + "]";
 	}
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result
+				+ ((bCommand == null) ? 0 : bCommand.hashCode());
 		result = prime * result + clientCommandId;
 		result = prime * result
 				+ ((clientId == null) ? 0 : clientId.hashCode());
 		result = prime * result + ((command == null) ? 0 : command.hashCode());
 		return result;
 	}
-	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -52,6 +62,11 @@ public class Request {
 		if (getClass() != obj.getClass())
 			return false;
 		Request other = (Request) obj;
+		if (bCommand == null) {
+			if (other.bCommand != null)
+				return false;
+		} else if (!bCommand.equals(other.bCommand))
+			return false;
 		if (clientCommandId != other.clientCommandId)
 			return false;
 		if (clientId == null) {

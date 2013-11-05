@@ -17,7 +17,7 @@ public class Acceptor extends Process {
 	}
 	
 	public void body() {
-		System.out.println(this.processId+" is performing the tasks!");
+	//	System.out.println(this.processId+" is performing the tasks!");
 		while(true) {
 			PaxosMessage pMessage = getNextMessage();
 			if(PaxosMessageEnum.P1A.equals(pMessage.getMessageType())) {
@@ -35,7 +35,7 @@ public class Acceptor extends Process {
 				
 				//send the constructed p1b message to the scout.
 				sendMessage(pMessage.getSrcId(), p1b);
-				System.out.println(this.processId+"sent p1b message");
+				//System.out.println(this.processId+"sent p1b message");
 			} else if (PaxosMessageEnum.P2A.equals(pMessage.getMessageType())) {
 				if(ballot == null || ballot.compareWith(pMessage.getBallot()) <= 0) {
 					ballot = pMessage.getBallot();
