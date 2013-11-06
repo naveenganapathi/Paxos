@@ -33,7 +33,7 @@ public class Ballot {
 
 	}
 	public String getString(){
-		return processId+":"+ballotId;
+		return processId+","+ballotId;
 	}
 	@Override
 	public String toString() {

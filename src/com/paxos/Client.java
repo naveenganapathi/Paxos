@@ -16,20 +16,22 @@ public class Client extends Process {
 		this.processId = pId;
 		this.main = main;
 		this.replicas = replicas;
+		initwriter(pId);
 		
 	}
 	@Override
 	public void body() {
-	//	System.out.println("spawned"+this.processId);
-		while(true) {			
+	//	writeToLog("spawned"+this.processId);
+		while(true) {		
 			PaxosMessage pMessage = getNextMessage();
-		//	System.out.println("message:"+pMessage);
+		//	writeToLog("message:"+pMessage);
 			if(PaxosMessageEnum.CLIENTINPUT.equals(pMessage.getMessageType())) {
 				
 				//generate a number of client requests
 				if(pMessage.getNumClientRequests() != null) {
 					
 					for(int i=0;i<pMessage.getNumClientRequests();i++) {
+						writeToLog(this.processId+": Sending request for "+i);
 						try {
 							Thread.sleep(2000l);
 						} catch (InterruptedException e) {
@@ -42,21 +44,21 @@ public class Client extends Process {
 						m.setSrcId(processId);
 						m.setMessageType(PaxosMessageEnum.REQUEST);
 						for(String replica : replicas) {
-							//System.out.println("sending requests to replicas"+m);
+							//writeToLog("sending requests to replicas"+m);
 							main.sendMessage(replica, m);
 						}
 					}
 					
 				}
 				
-				//place the given request
-				PaxosMessage m = new PaxosMessage();
-				m.setRequest(pMessage.getRequest());
-				m.setSrcId(processId);
-				m.setMessageType(PaxosMessageEnum.REQUEST);
-				for(String replica : replicas) {							
-					main.sendMessage(replica, m);
-				}
+//				//place the given request
+//				PaxosMessage m = new PaxosMessage();
+//				m.setRequest(pMessage.getRequest());
+//				m.setSrcId(processId);
+//				m.setMessageType(PaxosMessageEnum.REQUEST);
+//				for(String replica : replicas) {							
+//					main.sendMessage(replica, m);
+//				}
 				
 			} 
 			 

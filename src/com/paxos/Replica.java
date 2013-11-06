@@ -23,7 +23,7 @@ public class Replica extends Process{
 	public Replica(Main env, String procId) {
 		this.main = env;
 		this.processId = procId;
-		
+		initwriter(procId);
 		BankAccount accntA1 = new BankAccount("A1",(float)0.0);
 		BankAccount accntA2 = new BankAccount("A2",(float)0.0);
 		List<BankAccount> c1Accnts = new ArrayList<BankAccount>();c1Accnts.add(accntA1);
@@ -38,9 +38,11 @@ public class Replica extends Process{
 	
 	
 	public void propose(Request r) {
-		while(decisions.containsKey(minUndecided)) {
+		minUndecided = 1;
+		while(decisions.containsKey(minUndecided) || proposals.containsKey(minUndecided)) {
 			minUndecided++;
 		}
+		proposals.put(minUndecided, r);
 		PaxosMessage proposal = new PaxosMessage();
 		proposal.setRequest(r);
 		proposal.setMessageType(PaxosMessageEnum.PROPOSE);
@@ -48,22 +50,23 @@ public class Replica extends Process{
 		proposal.setSrcId(this.processId);
 		List<String> leaders = this.main.leaders;
 		for(String leader : leaders) {
-			//System.out.println(this.processId+" proposing to leader!");
+			//writeToLog(this.processId+" proposing to leader!");
 			main.sendMessage(leader, proposal);	
 		}						
+		minUndecided++;
 	}
 	
 	public void perform(Request r) {		
 		//check if already performed.
 		for(Entry<Integer,Request> entry : decisions.entrySet()) {
-			//System.out.println("inside perform"+entry);
+			//writeToLog("inside perform"+entry);
 			if(entry.getKey() < slotNumber && entry.getValue().equals(r)) {
 			
-				System.out.println("request already performed returning for slot"+entry.getKey()+", which is before"+slotNumber);
+				writeToLog("request already performed returning for slot"+entry.getKey()+", which is before"+slotNumber);
 				return;
 			}
 		}
-		System.out.println(this.processId+"performing "+r);
+		writeToLog(this.processId+"performing "+r);
 		BankCommand bc = r.getbCommand();
 		BankAccount src = accntMap.get(bc.getSrcAccntId());
 	    BankAccount dest = accntMap.get(bc.getDestAccntId());
@@ -72,19 +75,19 @@ public class Replica extends Process{
 		case WITHDRAW: src.setBalance(src.getBalance() - bc.getAmt()); break;
 		case TRANSFER: src.setBalance(src.getBalance() - bc.getAmt()); dest.setBalance(dest.getBalance()+bc.getAmt()); break;
 		}
-		System.out.println("map after perfoming the change:\n"+accntMap);
+		writeToLog(this.processId+" map after perfoming the change "+r+":\n"+accntMap);
 		slotNumber++;
 	}
 	
 	public void body() {
-		//System.out.println(this.processId+"running now");
+		//writeToLog(this.processId+"running now");
 		slotNumber = 1;
 		minUndecided = 1;
 		while(true) {
 			PaxosMessage pMessage = getNextMessage();
 			if(PaxosMessageEnum.PERFORM.equals(pMessage.getMessageType())) {
 				if(pMessage.getRequest() == null)
-				System.out.println("message with null request!"+pMessage);
+				writeToLog("message with null request!"+pMessage);
 				decisions.put(pMessage.getSlot_number(), pMessage.getRequest());
 				while(true) {
 					Request r = decisions.get(slotNumber);
@@ -101,11 +104,11 @@ public class Replica extends Process{
 					perform(r);					
 				}
 			} else if (PaxosMessageEnum.REQUEST.equals(pMessage.getMessageType())) {
-			//	System.out.println("proposing for the request !");
+				writeToLog(this.processId+" proposing for the request "+pMessage.getRequest());
 			  propose(pMessage.getRequest());	
 			}			
 			else {
-				System.out.println("UNKNOWN message type "+pMessage.getMessageType());
+				writeToLog("UNKNOWN message type "+pMessage.getMessageType());
 			}
 		}
 	}

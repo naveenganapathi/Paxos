@@ -22,12 +22,13 @@ public class Scout extends Process {
 		this.leader = leader;
 		this.acceptors = acceptors;
 		this.ballot = ballot;
+		initwriter(myProcessId);
 		main.addProcess(processId, this);
 	}
 
 	@Override
 	public void body() {
-		System.out.println("scouting now with ballot:D"+ballot);
+		writeToLog("scouting now with ballot:D"+ballot);
 		PaxosMessage p1amsg=new PaxosMessage();
 		p1amsg.setMessageType(PaxosMessageEnum.P1A);
 		p1amsg.setSrcId(this.processId);
@@ -43,7 +44,7 @@ public class Scout extends Process {
 			PaxosMessage msg=messages.dequeue();
 			if(msg.getMessageType().equals(PaxosMessageEnum.P1B)){
 				if(msg.getBallot().compareWith(this.ballot)!=0){
-					System.out.println(this.processId+" seeing a better ballot"+msg.getBallot()+" for"+ballot);
+					writeToLog(this.processId+" seeing a better ballot"+msg.getBallot()+" for"+ballot);
 					PaxosMessage preempt=new PaxosMessage();
 					preempt.setMessageType(PaxosMessageEnum.PREEMPT);
 					preempt.setBallot(msg.getBallot());

@@ -29,8 +29,9 @@ public class Commander extends Process{
 		this.ballot = ballot;
 		this.slot_number = slot_number;
 		this.request = request;
+		initwriter(myProcessId);
+		writeToLog(this.processId+ " created commander for"+request);
 		main.addProcess(this.processId, this);
-		System.err.println(this.processId+ "created commander for"+request);
 	}
 
 	@Override
@@ -54,8 +55,8 @@ public class Commander extends Process{
 					PaxosMessage preempt=new PaxosMessage();
 					preempt.setMessageType(PaxosMessageEnum.PREEMPT);
 					preempt.setBallot(msg.getBallot());
+					writeToLog(this.processId+" PREEMPTED!! for ballot:"+ballot);
 					main.sendMessage(this.leader, preempt);
-					System.err.println("PREEMPTED!! for ballot:"+ballot);
 					isPreempt=true;
 					break;
 				}
@@ -67,8 +68,8 @@ public class Commander extends Process{
 			decision.setSlot_number(slot_number);
 			decision.setRequest(request);
 			decision.setMessageType(PaxosMessageEnum.PERFORM);
-			System.err.println(this.processId+" NOT PREEMPTED!!"+decision.getRequest());
-			//System.err.println(decision);
+			writeToLog(this.processId+" NOT PREEMPTED!!"+decision.getRequest());
+			//writeToLog(decision);
 			for(String replica: replicas) {
 				main.sendMessage(replica, decision);
 			}

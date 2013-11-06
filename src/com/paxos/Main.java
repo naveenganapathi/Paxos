@@ -83,7 +83,7 @@ public class Main {
 		for(String client : clients) {
 			PaxosMessage m = new PaxosMessage();
 			m.setMessageType(PaxosMessageEnum.CLIENTINPUT);
-			m.setNumClientRequests((i+1)*15);
+			m.setNumClientRequests((i+1)*1);
 			sendMessage(client, m);
 			i++;
 		}

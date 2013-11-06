@@ -1,4 +1,7 @@
 package com.paxos;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,16 +17,19 @@ public class Acceptor extends Process {
 	public Acceptor(Main env,String procId) {
 		this.main = env;
 		this.processId = procId;
+		initwriter(procId);
 	}
 	
 	public void body() {
-	//	System.out.println(this.processId+" is performing the tasks!");
+	//	writeToLog(this.processId+" is performing the tasks!");
 		while(true) {
 			PaxosMessage pMessage = getNextMessage();
 			if(PaxosMessageEnum.P1A.equals(pMessage.getMessageType())) {
 				if(ballot == null || ballot.compareWith(pMessage.getBallot()) < 0) {
 					ballot = pMessage.getBallot();
-					System.out.println(processId+"adopted ballot:"+ballot);
+					
+					writeToLog(processId+"adopted ballot:"+ballot);
+					//System.out.println("adopted ballot");
 				}
 				
 				//construct p1b message.
@@ -35,11 +41,11 @@ public class Acceptor extends Process {
 				
 				//send the constructed p1b message to the scout.
 				sendMessage(pMessage.getSrcId(), p1b);
-				//System.out.println(this.processId+"sent p1b message");
+				//writeToLog(this.processId+"sent p1b message");
 			} else if (PaxosMessageEnum.P2A.equals(pMessage.getMessageType())) {
 				if(ballot == null || ballot.compareWith(pMessage.getBallot()) <= 0) {
 					ballot = pMessage.getBallot();
-					System.out.println(processId+"accepted ballot:"+ballot);
+					writeToLog(processId+"accepted ballot:"+ballot);
 					accepted.add(new PValue(ballot, pMessage.getSlot_number(), pMessage.getRequest()));
 				}
 				
