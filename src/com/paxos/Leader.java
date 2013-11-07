@@ -16,6 +16,8 @@ public class Leader extends Process {
 	ArrayList<String> acceptors=new ArrayList<String>();
 	ArrayList<String> replicas=new ArrayList<String>();
 	Ballot ballot;
+	double timeOut=1;
+	private static double INCREASE_FACTOR = 1.5;
 	boolean active = false;
 	Map<Integer,Request> proposals = new HashMap<Integer,Request>();
 
@@ -65,6 +67,7 @@ public class Leader extends Process {
 						writeToLog(this.processId+"creating commander for proposals:"+proposals.get(i).getClientId()+","+proposals.get(i).getClientCommandId());
 						new Commander(main, "COMMANDER:"+ballot.getString()+","+msg.getSlot_number(),processId,acceptors,replicas,ballot,i,proposals.get(i));
 					}
+					timeOut-=1;
 					active = true;
 				}
 			}
@@ -72,8 +75,16 @@ public class Leader extends Process {
 			//	writeToLog(this.processId+" ballot pre-empted!");
 			//	writeToLog("comparing "+ballot+" with "+msg.getBallot()+", res:"+ballot.compareWith(msg.getBallot()));
 				if(ballot.compareWith(msg.getBallot()) < 0) {
+					Double delay = timeOut*INCREASE_FACTOR*1000;
+					writeToLog(this.processId+": Delaying the spawn of a new scout by "+delay.intValue()+" seconds");
+					try {
+						Thread.sleep(delay.intValue()*1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					ballot = new Ballot(processId, msg.getBallot().getBallotId()+1);
-					writeToLog(this.processId+"ktrying with new ballot"+ballot);
+					writeToLog(this.processId+" trying with new ballot"+ballot);
 					new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot);
 					active = false;
 				}

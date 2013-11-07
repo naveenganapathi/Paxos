@@ -83,7 +83,8 @@ public class Main {
 		for(String client : clients) {
 			PaxosMessage m = new PaxosMessage();
 			m.setMessageType(PaxosMessageEnum.CLIENTINPUT);
-			m.setNumClientRequests((i+1)*1);
+			// Set this value for random msgs; Don't set it if the input is from file.
+			//m.setNumClientRequests((i+1)*1);
 			sendMessage(client, m);
 			i++;
 		}

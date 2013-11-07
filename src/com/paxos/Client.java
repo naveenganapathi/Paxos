@@ -1,4 +1,8 @@
 package com.paxos;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
 
 import com.paxos.common.BankCommand;
@@ -11,25 +15,25 @@ public class Client extends Process {
 
 	List<String> replicas;
 	int clientCommandId;
-	
+
 	public Client (Main main,String pId,List<String> replicas) {
 		this.processId = pId;
 		this.main = main;
 		this.replicas = replicas;
 		initwriter(pId);
-		
+
 	}
 	@Override
 	public void body() {
-	//	writeToLog("spawned"+this.processId);
+		//	writeToLog("spawned"+this.processId);
 		while(true) {		
 			PaxosMessage pMessage = getNextMessage();
-		//	writeToLog("message:"+pMessage);
+			//	writeToLog("message:"+pMessage);
 			if(PaxosMessageEnum.CLIENTINPUT.equals(pMessage.getMessageType())) {
-				
+
 				//generate a number of client requests
 				if(pMessage.getNumClientRequests() != null) {
-					
+
 					for(int i=0;i<pMessage.getNumClientRequests();i++) {
 						writeToLog(this.processId+": Sending request for "+i);
 						try {
@@ -48,20 +52,45 @@ public class Client extends Process {
 							main.sendMessage(replica, m);
 						}
 					}
-					
+
+				} else {
+					BufferedReader br;
+					try {
+						br = new BufferedReader(new FileReader(this.processId.replaceAll(":", "_")+".txt"));						
+						int i=0;
+						String temp = null;
+						while((temp = br.readLine()) != null) {
+							writeToLog(this.processId+": Sending request for "+i);
+							Thread.sleep(2000l);
+							String[] vals = temp.split(",");							
+							Request r = new Request(this.processId, clientCommandId++, "INSERT"+i,new BankCommand(CommandEnum.valueOf(vals[0]), vals[1], vals[2], Float.parseFloat(vals[3])));
+							PaxosMessage m = new PaxosMessage();
+							m.setRequest(r);
+							m.setSrcId(processId);
+							m.setMessageType(PaxosMessageEnum.REQUEST);
+							for(String replica : replicas) {
+								//writeToLog("sending requests to replicas"+m);
+								main.sendMessage(replica, m);
+							}
+							i++;
+						}
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
-				
-//				//place the given request
-//				PaxosMessage m = new PaxosMessage();
-//				m.setRequest(pMessage.getRequest());
-//				m.setSrcId(processId);
-//				m.setMessageType(PaxosMessageEnum.REQUEST);
-//				for(String replica : replicas) {							
-//					main.sendMessage(replica, m);
-//				}
-				
+
+				//				//place the given request
+				//				PaxosMessage m = new PaxosMessage();
+				//				m.setRequest(pMessage.getRequest());
+				//				m.setSrcId(processId);
+				//				m.setMessageType(PaxosMessageEnum.REQUEST);
+				//				for(String replica : replicas) {							
+				//					main.sendMessage(replica, m);
+				//				}
+
 			} 
-			 
+
 		}
 	}
 

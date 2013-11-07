@@ -32,6 +32,7 @@ public abstract class Process extends Thread{
 	}
 	
 	public void writeToLog(String s) {
+		System.out.println(s);
 		writer.println(processId+" : "+s);
 		writer.flush();
 	}
