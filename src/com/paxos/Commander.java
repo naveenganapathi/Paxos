@@ -35,7 +35,7 @@ public class Commander extends Process{
 	}
 
 	@Override
-	public void body() {
+	public void body() throws Exception {
 		PaxosMessage p2amsg=new PaxosMessage();
 		p2amsg.setMessageType(PaxosMessageEnum.P2A);
 		p2amsg.setSrcId(this.processId);
@@ -43,7 +43,7 @@ public class Commander extends Process{
 		p2amsg.setRequest(request);
 		Set<String> waitFor = new HashSet<String>();
 		for(String acceptor: acceptors) {
-			main.sendMessage(acceptor, p2amsg);
+			sendMessage(acceptor, p2amsg);
 			waitFor.add(acceptor);
 		}
 		int acceptorsSize = acceptors.size();
@@ -56,7 +56,7 @@ public class Commander extends Process{
 					preempt.setMessageType(PaxosMessageEnum.PREEMPT);
 					preempt.setBallot(msg.getBallot());
 					writeToLog(this.processId+" PREEMPTED!! for ballot:"+ballot);
-					main.sendMessage(this.leader, preempt);
+					sendMessage(this.leader, preempt);
 					isPreempt=true;
 					break;
 				}
@@ -71,7 +71,7 @@ public class Commander extends Process{
 			writeToLog(this.processId+" NOT PREEMPTED!!"+decision.getRequest());
 			//writeToLog(decision);
 			for(String replica: replicas) {
-				main.sendMessage(replica, decision);
+				sendMessage(replica, decision);
 			}
 		}
 	}

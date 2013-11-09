@@ -37,7 +37,7 @@ public class Replica extends Process{
 	}
 	
 	
-	public void propose(Request r) {
+	public void propose(Request r) throws Exception {
 		minUndecided = 1;
 		while(decisions.containsKey(minUndecided) || proposals.containsKey(minUndecided)) {
 			minUndecided++;
@@ -51,7 +51,7 @@ public class Replica extends Process{
 		List<String> leaders = this.main.leaders;
 		for(String leader : leaders) {
 			//writeToLog(this.processId+" proposing to leader!");
-			main.sendMessage(leader, proposal);	
+			sendMessage(leader, proposal);	
 		}						
 		minUndecided++;
 	}
@@ -67,6 +67,7 @@ public class Replica extends Process{
 			}
 		}
 		writeToLog(this.processId+"performing "+r);
+		writeToLog(this.processId+" map before perfoming the change "+r+":\n"+accntMap);
 		BankCommand bc = r.getbCommand();
 		BankAccount src = accntMap.get(bc.getSrcAccntId());
 	    BankAccount dest = accntMap.get(bc.getDestAccntId());
@@ -79,11 +80,11 @@ public class Replica extends Process{
 		slotNumber++;
 	}
 	
-	public void body() {
+	public void body() throws Exception {
 		//writeToLog(this.processId+"running now");
 		slotNumber = 1;
 		minUndecided = 1;
-		while(true) {
+		while(true && this.alive) {
 			PaxosMessage pMessage = getNextMessage();
 			if(PaxosMessageEnum.PERFORM.equals(pMessage.getMessageType())) {
 				if(pMessage.getRequest() == null)

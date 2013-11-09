@@ -20,9 +20,9 @@ public class Acceptor extends Process {
 		initwriter(procId);
 	}
 	
-	public void body() {
+	public void body() throws Exception {
 	//	writeToLog(this.processId+" is performing the tasks!");
-		while(true) {
+		while(true && this.alive) {
 			PaxosMessage pMessage = getNextMessage();
 			if(PaxosMessageEnum.P1A.equals(pMessage.getMessageType())) {
 				if(ballot == null || ballot.compareWith(pMessage.getBallot()) < 0) {

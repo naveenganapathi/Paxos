@@ -27,7 +27,7 @@ public class Scout extends Process {
 	}
 
 	@Override
-	public void body() {
+	public void body() throws Exception {
 		writeToLog("scouting now with ballot:D"+ballot);
 		PaxosMessage p1amsg=new PaxosMessage();
 		p1amsg.setMessageType(PaxosMessageEnum.P1A);
@@ -35,7 +35,7 @@ public class Scout extends Process {
 		p1amsg.setBallot(this.ballot);
 		Set<String> waitFor = new HashSet<String>();
 		for(String acceptor: acceptors) {
-			main.sendMessage(acceptor, p1amsg);
+			sendMessage(acceptor, p1amsg);
 			waitFor.add(acceptor);
 		}
 		int acceptorsSize = acceptors.size();
@@ -48,7 +48,7 @@ public class Scout extends Process {
 					PaxosMessage preempt=new PaxosMessage();
 					preempt.setMessageType(PaxosMessageEnum.PREEMPT);
 					preempt.setBallot(msg.getBallot());
-					main.sendMessage(this.leader, preempt);
+					sendMessage(this.leader, preempt);
 					isPreempt=true;
 					break;
 				}
@@ -61,7 +61,7 @@ public class Scout extends Process {
 			adopted.setMessageType(PaxosMessageEnum.ADOPTED);
 			adopted.setAccepted(pvalues);
 			adopted.setBallot(ballot);
-			main.sendMessage(this.leader, adopted);
+			sendMessage(this.leader, adopted);
 		}
 	}
 

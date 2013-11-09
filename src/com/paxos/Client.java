@@ -17,6 +17,7 @@ public class Client extends Process {
 	int clientCommandId;
 
 	public Client (Main main,String pId,List<String> replicas) {
+		super();
 		this.processId = pId;
 		this.main = main;
 		this.replicas = replicas;
@@ -24,9 +25,9 @@ public class Client extends Process {
 
 	}
 	@Override
-	public void body() {
+	public void body() throws Exception {
 		//	writeToLog("spawned"+this.processId);
-		while(true) {		
+		while(true & this.alive) {		
 			PaxosMessage pMessage = getNextMessage();
 			//	writeToLog("message:"+pMessage);
 			if(PaxosMessageEnum.CLIENTINPUT.equals(pMessage.getMessageType())) {
@@ -49,14 +50,14 @@ public class Client extends Process {
 						m.setMessageType(PaxosMessageEnum.REQUEST);
 						for(String replica : replicas) {
 							//writeToLog("sending requests to replicas"+m);
-							main.sendMessage(replica, m);
+							sendMessage(replica, m);
 						}
 					}
 
 				} else {
 					BufferedReader br;
 					try {
-						br = new BufferedReader(new FileReader(this.processId.replaceAll(":", "_")+".txt"));						
+						br = new BufferedReader(new FileReader(this.processId.replaceAll(":", "_")+"INP"+".txt"));						
 						int i=0;
 						String temp = null;
 						while((temp = br.readLine()) != null) {
@@ -70,7 +71,7 @@ public class Client extends Process {
 							m.setMessageType(PaxosMessageEnum.REQUEST);
 							for(String replica : replicas) {
 								//writeToLog("sending requests to replicas"+m);
-								main.sendMessage(replica, m);
+								sendMessage(replica, m);
 							}
 							i++;
 						}

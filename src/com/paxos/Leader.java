@@ -35,7 +35,7 @@ public class Leader extends Process {
 	//	writeToLog("spawned"+this.processId);
 		new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot);
 		
-		while(true){
+		while(true & this.alive){
 			PaxosMessage msg=messages.dequeue();
 			if(msg.getMessageType().equals(PaxosMessageEnum.PROPOSE)) {
 				//writeToLog(this.processId+" acquried proposal "+msg.getRequest());
@@ -68,6 +68,12 @@ public class Leader extends Process {
 						new Commander(main, "COMMANDER:"+ballot.getString()+","+msg.getSlot_number(),processId,acceptors,replicas,ballot,i,proposals.get(i));
 					}
 					timeOut-=1;
+					
+					//time out can never go below 1.
+					if(timeOut < 1) {
+						System.err.println("Time out has become negative.");
+						timeOut = 1;
+					}
 					active = true;
 				}
 			}
@@ -75,7 +81,7 @@ public class Leader extends Process {
 			//	writeToLog(this.processId+" ballot pre-empted!");
 			//	writeToLog("comparing "+ballot+" with "+msg.getBallot()+", res:"+ballot.compareWith(msg.getBallot()));
 				if(ballot.compareWith(msg.getBallot()) < 0) {
-					Double delay = timeOut*INCREASE_FACTOR*1000;
+					Double delay = timeOut*INCREASE_FACTOR*20;
 					writeToLog(this.processId+": Delaying the spawn of a new scout by "+delay.intValue()+" seconds");
 					try {
 						Thread.sleep(delay.intValue()*1000);
@@ -89,6 +95,10 @@ public class Leader extends Process {
 					active = false;
 				}
 			}
+		}
+		
+		if(!this.alive) {
+			System.err.println("SUCCESSFULLY KILLED THE LEADER MUWHAAHAHA");
 		}
 	}
 }
