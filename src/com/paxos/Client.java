@@ -37,12 +37,12 @@ public class Client extends Process {
 
 					for(int i=0;i<pMessage.getNumClientRequests();i++) {
 						writeToLog(this.processId+": Sending request for "+i);
-						try {
-							Thread.sleep(2000l);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+//						try {
+//							Thread.sleep(2000l);
+//						} catch (InterruptedException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
 						Request r = new Request(this.processId, clientCommandId++, "INSERT"+i,new BankCommand(CommandEnum.DEPOSIT, "A1", null, (float)(10.00)));
 						PaxosMessage m = new PaxosMessage();
 						m.setRequest(r);
@@ -51,6 +51,13 @@ public class Client extends Process {
 						for(String replica : replicas) {
 							//writeToLog("sending requests to replicas"+m);
 							sendMessage(replica, m);
+						}
+						
+						while(true) {
+							PaxosMessage msg = getNextMessage();
+							if(msg.getRequest().getClientId().equals(processId) && msg.getRequest().getClientCommandId() == i) {
+								break;
+							}
 						}
 					}
 
@@ -72,6 +79,14 @@ public class Client extends Process {
 							for(String replica : replicas) {
 								//writeToLog("sending requests to replicas"+m);
 								sendMessage(replica, m);
+							}
+							
+							while(true) {
+								PaxosMessage msg = getNextMessage();
+								if(msg.getRequest().getClientId().equals(processId) && msg.getRequest().getClientCommandId() == i) {
+									writeToLog(this.processId+" Got response for request:"+msg.getRequest().getClientCommandId());
+									break;
+								}
 							}
 							i++;
 						}

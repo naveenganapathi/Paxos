@@ -58,7 +58,7 @@ public class Replica extends Process{
 		}						
 	}
 	
-	public void perform(Request r) {		
+	public void perform(Request r) throws Exception {		
 		//check if already performed.
 		for(Entry<Integer,Request> entry : decisions.entrySet()) {
 			//writeToLog("inside perform"+entry);
@@ -80,6 +80,11 @@ public class Replica extends Process{
 		case TRANSFER: src.setBalance(src.getBalance() - bc.getAmt()); dest.setBalance(dest.getBalance()+bc.getAmt()); break;
 		}
 		writeToLog(this.processId+" map after perfoming at slot "+slotNumber+" the change "+r+":\n"+accntMap);
+		PaxosMessage clientReply = new PaxosMessage();
+		Request cReq = new Request(r.getClientId(), r.getClientCommandId(), "Request Performed", null);
+		clientReply.setRequest(cReq);
+		writeToLog(this.processId+" sending response to client for "+r.getClientCommandId());
+		sendMessage(r.getClientId(), clientReply);
 		slotNumber++;
 		
 		//SEND RESPONSE to CLIENT.
