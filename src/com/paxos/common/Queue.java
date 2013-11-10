@@ -3,7 +3,7 @@ package com.paxos.common;
 import java.util.LinkedList;
 
 public class Queue<T> {
-	LinkedList<T> list = new LinkedList<T>();
+	public LinkedList<T> list = new LinkedList<T>();
 	public synchronized void enqueue(T object) {
 		list.add(object);
 		notify();
@@ -15,7 +15,7 @@ public class Queue<T> {
 				wait();
 			}catch(InterruptedException e){
 				e.printStackTrace();	
-			}			
+			}
 		}
 		return list.removeFirst();
 	}

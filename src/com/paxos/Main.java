@@ -18,10 +18,10 @@ public class Main {
 	public Map<String,Map<String,Integer>> faultMap = new HashMap<String,Map<String,Integer>>();
 	
 	public final static int nAcceptors = 3;
-	public final static int nReplicas = 2;
-	public final static int nLeaders = 2;
+	public final static int nReplicas = 5;
+	public final static int nLeaders = 4;
 	public final static int nRequests = 10;
-	public final static int nClients = 2;
+	public final static int nClients = 4;
 
 	public void initFaultMap(String val[]) {
 		int size = val.length;
@@ -57,8 +57,10 @@ public class Main {
 				String leader = getLeader(pId);
 				//System.out.println("LEADER:"+leader);
 				if(faultMap.containsKey(leader) && faultMap.get(leader).containsKey(key)) {
-					if (faultMap.get(leader).get(key) <= 0 && processes.get(leader) != null) {
-						processes.get(leader).alive = false;
+					if (faultMap.get(leader).get(key) <= 0) {
+						if(processes.get(leader) != null) {
+							processes.get(leader).alive = false;
+						}
 						return true;
 					}
 				}
@@ -74,9 +76,9 @@ public class Main {
 			if (pId.contains("SCOUT") || pId.contains("COMMANDER")) {
 				String leader = getLeader(pId);
 				if(faultMap.containsKey(leader) && faultMap.get(leader).containsKey(key)) {
-					System.out.println(pId+" before decrement current val:"+faultMap.get(leader).get(key));
+				//	System.out.println(pId+" before decrement current val:"+faultMap.get(leader).get(key));
 					faultMap.get(leader).put(key, faultMap.get(leader).get(key) - 1);	
-					System.out.println(pId+"after decrement current val:"+faultMap.get(leader).get(key));
+				//	System.out.println(pId+"after decrement current val:"+faultMap.get(leader).get(key));
 				}
 				
 			}
@@ -159,7 +161,7 @@ public class Main {
 			PaxosMessage m = new PaxosMessage();
 			m.setMessageType(PaxosMessageEnum.CLIENTINPUT);
 			// Set this value for random msgs; Don't set it if the input is from file.
-			m.setNumClientRequests((i+1)*5);
+			m.setNumClientRequests((i+1)*3);
 			sendMessage("main",client, m);
 			i++;
 		}

@@ -40,6 +40,7 @@ public class Commander extends Process{
 		p2amsg.setMessageType(PaxosMessageEnum.P2A);
 		p2amsg.setSrcId(this.processId);
 		p2amsg.setBallot(this.ballot);
+		p2amsg.setSlot_number(slot_number);
 		p2amsg.setRequest(request);
 		Set<String> waitFor = new HashSet<String>();
 		for(String acceptor: acceptors) {

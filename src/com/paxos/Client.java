@@ -43,7 +43,7 @@ public class Client extends Process {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						Request r = new Request(this.processId, clientCommandId++, "INSERT"+i,new BankCommand(CommandEnum.DEPOSIT, "A1", null, (float)((i+1)*10.00)));
+						Request r = new Request(this.processId, clientCommandId++, "INSERT"+i,new BankCommand(CommandEnum.DEPOSIT, "A1", null, (float)(10.00)));
 						PaxosMessage m = new PaxosMessage();
 						m.setRequest(r);
 						m.setSrcId(processId);

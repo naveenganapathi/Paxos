@@ -38,22 +38,24 @@ public class Replica extends Process{
 	
 	
 	public void propose(Request r) throws Exception {
-		minUndecided = 1;
-		while(decisions.containsKey(minUndecided) || proposals.containsKey(minUndecided)) {
-			minUndecided++;
-		}
-		proposals.put(minUndecided, r);
-		PaxosMessage proposal = new PaxosMessage();
-		proposal.setRequest(r);
-		proposal.setMessageType(PaxosMessageEnum.PROPOSE);
-		proposal.setSlot_number(minUndecided);
-		proposal.setSrcId(this.processId);
-		List<String> leaders = this.main.leaders;
-		for(String leader : leaders) {
-			//writeToLog(this.processId+" proposing to leader!");
-			sendMessage(leader, proposal);	
+		if(!decisions.containsValue(r)) {
+			minUndecided = 1;
+			while(decisions.containsKey(minUndecided) || proposals.containsKey(minUndecided)) {
+				minUndecided++;
+			}
+			proposals.put(minUndecided, r);
+			PaxosMessage proposal = new PaxosMessage();
+			proposal.setRequest(r);
+			proposal.setMessageType(PaxosMessageEnum.PROPOSE);
+			proposal.setSlot_number(minUndecided);
+			proposal.setSrcId(this.processId);
+			List<String> leaders = this.main.leaders;
+			writeToLog(this.processId+": Proposing slot "+minUndecided+" for request "+r);
+			for(String leader : leaders) {
+				//writeToLog(this.processId+" proposing to leader!");
+				sendMessage(leader, proposal);	
+			}	
 		}						
-		minUndecided++;
 	}
 	
 	public void perform(Request r) {		
@@ -63,11 +65,12 @@ public class Replica extends Process{
 			if(entry.getKey() < slotNumber && entry.getValue().equals(r)) {
 			
 				writeToLog("request already performed returning for slot"+entry.getKey()+", which is before"+slotNumber);
+				slotNumber++;
 				return;
 			}
 		}
-		writeToLog(this.processId+"performing "+r);
-		writeToLog(this.processId+" map before perfoming the change "+r+":\n"+accntMap);
+		//writeToLog(this.processId+"performing "+r);
+		//writeToLog(this.processId+" map before perfoming the change "+r+":\n"+accntMap);
 		BankCommand bc = r.getbCommand();
 		BankAccount src = accntMap.get(bc.getSrcAccntId());
 	    BankAccount dest = accntMap.get(bc.getDestAccntId());
@@ -76,8 +79,10 @@ public class Replica extends Process{
 		case WITHDRAW: src.setBalance(src.getBalance() - bc.getAmt()); break;
 		case TRANSFER: src.setBalance(src.getBalance() - bc.getAmt()); dest.setBalance(dest.getBalance()+bc.getAmt()); break;
 		}
-		writeToLog(this.processId+" map after perfoming the change "+r+":\n"+accntMap);
+		writeToLog(this.processId+" map after perfoming at slot "+slotNumber+" the change "+r+":\n"+accntMap);
 		slotNumber++;
+		
+		//SEND RESPONSE to CLIENT.
 	}
 	
 	public void body() throws Exception {
@@ -87,14 +92,12 @@ public class Replica extends Process{
 		while(true && this.alive) {
 			PaxosMessage pMessage = getNextMessage();
 			if(PaxosMessageEnum.PERFORM.equals(pMessage.getMessageType())) {
+				writeToLog(this.processId+": Received decision for slot : "+pMessage.getSlot_number());
 				if(pMessage.getRequest() == null)
 				writeToLog("message with null request!"+pMessage);
 				decisions.put(pMessage.getSlot_number(), pMessage.getRequest());
-				while(true) {
+				while(decisions.containsKey(slotNumber)) {
 					Request r = decisions.get(slotNumber);
-					if(r==null)
-						break;
-					
 					//propose again in case the request for the slot is different from the request you proposed.
 					if(proposals.containsKey(slotNumber) 
 							&& !decisions.get(slotNumber).equals(proposals.get(slotNumber))) {

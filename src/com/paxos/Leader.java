@@ -40,9 +40,10 @@ public class Leader extends Process {
 		//	writeToLog("spawned"+this.processId);
 		new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot);
 		while(true & this.alive){
-			System.out.println("ProcessId and current leader:"+this.processId+","+currentLeader);
+			//System.out.println("ProcessId and current leader:"+this.processId+","+currentLeader);
 			if(("LEADER:"+currentLeader).equalsIgnoreCase(this.processId) ) {
 				PaxosMessage msg=messages.dequeue();
+				//System.out.println("here buddy - "+msg);
 				if(!this.alive)
 					break;
 				if(msg.getMessageType().equals(PaxosMessageEnum.PROPOSE)) {
@@ -138,16 +139,29 @@ public class Leader extends Process {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				PaxosMessage msg=messages.dequeue();
-				if(msg==null || (msg!=null && !(msg.getSrcId().equals("LEADER:"+currentLeader) &&  msg.getMessageType().equals(PaxosMessageEnum.LEADERCHECKACK)))) {
-					writeToLog(this.processId+"Leader Dead. Changing current leader to "+currentLeader+1);
+				
+				boolean found=false;
+				PaxosMessage toDelete = null;
+				for(PaxosMessage msg:messages.list) {
+					if(msg.getMessageType().equals(PaxosMessageEnum.LEADERCHECKACK)) {
+						found=true;
+						toDelete = msg;
+						break;						
+					}
+				}
+				
+				if(!found) {
+					writeToLog(this.processId+": Current Leader Dead. Changing current leader to "+(int)(currentLeader+1));
 					currentLeader++;
+				} else {
+					writeToLog(this.processId+": Ack from "+toDelete.getSrcId()+" received");
+					messages.list.remove(toDelete);
 				}
 			}
 		}
 
 		if(!this.alive) {
-			System.err.println("SUCCESSFULLY KILLED THE LEADER MUWHAAHAHA");
+			System.err.println("SUCCESSFULLY KILLED THE LEADER MUWHAAHAHA - "+this.processId);
 		}
 	}
 }
