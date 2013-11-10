@@ -22,7 +22,7 @@ public abstract class Process extends Thread{
 		try {
 			body();
 		} catch (Exception e) {
-			writeToLog("caught exception. finishing execution."+e);
+			writeToLog(this.processId+" caught exception. finishing execution."+e);
 			e.printStackTrace();
 		}
 		main.removeProcess(processId);
@@ -47,6 +47,7 @@ public abstract class Process extends Thread{
 		writer.close();		
 	}
 	public void sendMessage(String destProcessId, PaxosMessage msg) throws Exception{
+		msg.setSrcId(this.processId);
 		main.sendMessage(this.processId,destProcessId, msg);
 	}
 	

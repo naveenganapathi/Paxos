@@ -49,13 +49,13 @@ public class Main {
 			return null;
 		}
 	}
-	public boolean hasBreached(String pId, String key) {
+	synchronized public boolean hasBreached(String pId, String key) {
 		if(faultMap.containsKey(pId) && faultMap.get(pId).containsKey(key)) {
 			return (faultMap.get(pId).get(key) <= 0 );	
 		} else {
 			if (pId.contains("SCOUT") || pId.contains("COMMANDER")) {
 				String leader = getLeader(pId);
-				System.out.println("LEADER:"+leader);
+				//System.out.println("LEADER:"+leader);
 				if(faultMap.containsKey(leader) && faultMap.get(leader).containsKey(key)) {
 					if (faultMap.get(leader).get(key) <= 0 && processes.get(leader) != null) {
 						processes.get(leader).alive = false;
@@ -67,14 +67,16 @@ public class Main {
 		return false;
 	}
 	
-	public void updateFMap(String pId,String key) {
+	synchronized public void updateFMap(String pId,String key) {
 		if(faultMap.containsKey(pId) && faultMap.get(pId).containsKey(key)) {
 			faultMap.get(pId).put(key, faultMap.get(pId).get(key) - 1);	
 		} else {
 			if (pId.contains("SCOUT") || pId.contains("COMMANDER")) {
 				String leader = getLeader(pId);
 				if(faultMap.containsKey(leader) && faultMap.get(leader).containsKey(key)) {
+					System.out.println(pId+" before decrement current val:"+faultMap.get(leader).get(key));
 					faultMap.get(leader).put(key, faultMap.get(leader).get(key) - 1);	
+					System.out.println(pId+"after decrement current val:"+faultMap.get(leader).get(key));
 				}
 				
 			}
@@ -82,22 +84,22 @@ public class Main {
 	}
 	
 	synchronized public void sendMessage(String srcProcessId,String destProcessId, PaxosMessage msg) throws Exception{
+		String leader = getLeader(srcProcessId);
 		if(hasBreached(srcProcessId,"SEND,"+msg.getMessageType())) {
 			throw new Exception("Send count breached before a send can be performed. inducing an exception.");
-		} else if (processes.get(srcProcessId).isAlive() == false || (getLeader(srcProcessId) != null && processes.get(getLeader(srcProcessId)).isAlive() == false )) {
+		} else if ((processes.get(srcProcessId)!=null && processes.get(srcProcessId).isAlive() == false) || (leader != null && processes.get(leader) != null && processes.get(leader).isAlive() == false )) {
 			throw new Exception("the process or its leader is not alive. inducing an exception");
-		}else {
-			System.out.println("NO BREAAAAAAAAAAAAcH"+srcProcessId+","+faultMap.get(srcProcessId));
 		}
 		Process p = processes.get(destProcessId);
+		
+		if(p!=null) {
+			p.deliver(msg);
+		}
 		
 		updateFMap(srcProcessId, "SEND,"+msg.getMessageType());
 		
 		if(hasBreached(srcProcessId,"SEND,"+msg.getMessageType())) {
 			throw new Exception("Send count breached after a send has been performed. inducing an exception.");
-		}
-		if(p!=null) {
-			p.deliver(msg);
 		}
 	}
 	

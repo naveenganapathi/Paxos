@@ -11,7 +11,9 @@ public enum PaxosMessageEnum {
 	PERFORM("perform"),
 	DECISION("decision"),
 	REQUEST("request"),
-	CLIENTINPUT("client_input");
+	CLIENTINPUT("client_input"),
+	LEADERCHECK("leader_check"),
+	LEADERCHECKACK("leader_check_ack");
 	String messageLabel;
 	PaxosMessageEnum(String message) {
 		this.messageLabel=message;
