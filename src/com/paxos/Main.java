@@ -84,7 +84,7 @@ public class Main {
 	synchronized public void sendMessage(String srcProcessId,String destProcessId, PaxosMessage msg) throws Exception{
 		if(hasBreached(srcProcessId,"SEND,"+msg.getMessageType())) {
 			throw new Exception("Send count breached before a send can be performed. inducing an exception.");
-		} else if (processes.get(srcProcessId).isAlive() == false || (getLeader(srcProcessId) != null && processes.get(getLeader(srcProcessId)).isAlive() == false )) {
+		} else if ((processes.get(srcProcessId)!= null && processes.get(srcProcessId).isAlive() == false) || (getLeader(srcProcessId) != null && processes.get(getLeader(srcProcessId)).isAlive() == false )) {
 			throw new Exception("the process or its leader is not alive. inducing an exception");
 		}else {
 			System.out.println("NO BREAAAAAAAAAAAAcH"+srcProcessId+","+faultMap.get(srcProcessId));
