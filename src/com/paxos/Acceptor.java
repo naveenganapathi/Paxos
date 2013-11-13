@@ -1,7 +1,4 @@
 package com.paxos;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,8 +7,10 @@ import com.paxos.common.PValue;
 import com.paxos.common.PaxosMessage;
 import com.paxos.common.PaxosMessageEnum;
 import com.paxos.common.Process;
+import com.paxos.common.Timer;
 public class Acceptor extends Process {
 	Ballot ballot = null; //initialized to bottom.
+	Timer timer;
 	Set<PValue> accepted = new HashSet<PValue>();
 	
 	public Acceptor(Main env,String procId) {
@@ -25,9 +24,10 @@ public class Acceptor extends Process {
 		while(true && this.alive) {
 			PaxosMessage pMessage = getNextMessage();
 			if(PaxosMessageEnum.P1A.equals(pMessage.getMessageType())) {
-				if(ballot == null || ballot.compareWith(pMessage.getBallot()) < 0) {
+				if((timer == null || timer.hasTimedOut()) && (ballot == null || ballot.compareWith(pMessage.getBallot()) < 0)) {
 					ballot = pMessage.getBallot();
-					
+					timer.setTimeoutInSeconds(pMessage.getLeasePeriod());
+					timer.start();
 					writeToLog(processId+"adopted ballot:"+ballot);
 					//System.out.println("adopted ballot");
 				}

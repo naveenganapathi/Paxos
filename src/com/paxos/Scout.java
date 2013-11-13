@@ -9,19 +9,23 @@ import com.paxos.common.PValue;
 import com.paxos.common.PaxosMessage;
 import com.paxos.common.PaxosMessageEnum;
 import com.paxos.common.Process;
+import com.paxos.common.Request;
 public class Scout extends Process {
 
+	private static int LEASE_PERIOD_IN_SECONDS = 15;
 	String leader;
 	ArrayList<String> acceptors=new ArrayList<String>();
 	Set<PValue> pvalues=new HashSet<PValue>();
 	Ballot ballot;
-
-	public Scout(Main main, String myProcessId, String leader, ArrayList<String> acceptors, Ballot ballot) {
+	boolean isReadOnly;
+	
+	public Scout(Main main, String myProcessId, String leader, ArrayList<String> acceptors, Ballot ballot,boolean isReadOnly) {
 		this.main=main;
 		this.processId=myProcessId;
 		this.leader = leader;
 		this.acceptors = acceptors;
 		this.ballot = ballot;
+		this.isReadOnly = isReadOnly; 
 		initwriter(myProcessId);
 		main.addProcess(processId, this);
 	}
@@ -33,6 +37,11 @@ public class Scout extends Process {
 		p1amsg.setMessageType(PaxosMessageEnum.P1A);
 		p1amsg.setSrcId(this.processId);
 		p1amsg.setBallot(this.ballot);
+		if(isReadOnly)
+		p1amsg.setLeasePeriod(LEASE_PERIOD_IN_SECONDS);
+		else
+		p1amsg.setLeasePeriod(LEASE_PERIOD_IN_SECONDS);
+		
 		Set<String> waitFor = new HashSet<String>();
 		for(String acceptor: acceptors) {
 			sendMessage(acceptor, p1amsg);
@@ -48,6 +57,7 @@ public class Scout extends Process {
 					PaxosMessage preempt=new PaxosMessage();
 					preempt.setMessageType(PaxosMessageEnum.PREEMPT);
 					preempt.setBallot(msg.getBallot());
+					preempt.setReadMessage(isReadOnly);
 					sendMessage(this.leader, preempt);
 					isPreempt=true;
 					break;

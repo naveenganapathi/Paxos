@@ -56,6 +56,7 @@ public class Commander extends Process{
 					PaxosMessage preempt=new PaxosMessage();
 					preempt.setMessageType(PaxosMessageEnum.PREEMPT);
 					preempt.setBallot(msg.getBallot());
+					preempt.setReadMessage(false);
 					writeToLog(this.processId+" PREEMPTED!! for ballot:"+ballot);
 					sendMessage(this.leader, preempt);
 					isPreempt=true;

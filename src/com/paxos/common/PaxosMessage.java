@@ -10,6 +10,21 @@ public class PaxosMessage {
 	int slot_number;
 	Integer numClientRequests;
 	Request request;
+	Integer leasePeriod;
+	boolean isReadMessage;
+	
+	public boolean isReadMessage() {
+		return isReadMessage;
+	}
+	public void setReadMessage(boolean isReadMessage) {
+		this.isReadMessage = isReadMessage;
+	}
+	public Integer getLeasePeriod() {
+		return leasePeriod;
+	}
+	public void setLeasePeriod(Integer leasePeriod) {
+		this.leasePeriod = leasePeriod;
+	}
 	public PaxosMessageEnum getMessageType() {
 		return messageType;
 	}
@@ -58,7 +73,8 @@ public class PaxosMessage {
 		return "PaxosMessage [messageType=" + messageType + ", srcId=" + srcId
 				+ ", ballot=" + ballot + ", accepted=" + accepted
 				+ ", slot_number=" + slot_number + ", numClientRequests="
-				+ numClientRequests + ", request=" + request + "]";
+				+ numClientRequests + ", request=" + request + ", leasePeriod="
+				+ leasePeriod + ", isReadMessage=" + isReadMessage + "]";
 	}
 	
 }
