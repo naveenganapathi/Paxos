@@ -2,6 +2,7 @@ package com.paxos;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.paxos.common.Ballot;
@@ -51,7 +52,7 @@ public class Leader extends Process {
 	}
 	
 	@Override
-	public void body() {
+	public void body() throws Exception {
 		//	writeToLog("spawned"+this.processId);
 		new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,false);
 		while(true & this.alive){
@@ -94,13 +95,62 @@ public class Leader extends Process {
 							}
 							
 							//allowing Replicas to complete all the pending transactions.
-							
+							try {
+								Thread.sleep(5000);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 							
 							//browse through the queue and pick only to commit messages.
+							for(PaxosMessage pm : messages.list) {
+								if(PaxosMessageEnum.REPLICA_COMMIT.equals(pm.getMessageType())) {
+									if(replicaProcCnt.get(pm.getSrcId()) < pm.getRequest().getClientCommandId()) {
+										replicaProcCnt.put(pm.getSrcId(), pm.getRequest().getClientCommandId());										
+									}
+									messages.list.remove(pm);
+								}
+							}
+							
+							
 							
 							if(timer.hasTimedOut()) {
 								setTimerAndStartScout();
 							}  else {
+								List<String> aliveReplicas = new ArrayList<String>();
+								for(String replicaId : replicaProcCnt.keySet()) {
+									if(replicaProcCnt.get(replicaId) == maxAdopted) {
+										aliveReplicas.add(replicaId);
+									}
+								}
+								
+								for(String replica : aliveReplicas) {
+									if(timer.hasTimedOut()) {
+										setTimerAndStartScout();
+									}
+									PaxosMessage read = new PaxosMessage();
+									read.setSrcId(this.processId);
+									read.setRequest(msg.getRequest());
+									main.sendMessage(this.processId,replica,read);
+									//wait for replica to complete
+									Thread.sleep(2000);
+									
+									boolean flag = false;
+									for(PaxosMessage pm : messages.list) {
+										if(PaxosMessageEnum.REPLICA_COMMIT.equals(pm.getMessageType())) {
+											if(read.getRequest().getClientCommandId() == pm.getRequest().getClientCommandId()) {
+												messages.list.remove(pm);
+												flag = true;
+												break;
+											}											
+										}
+									}
+									
+									if(flag) {
+										writeToLog("successfully executed read command!");
+									}
+								}
+								
 								
 								//send msg to all the replicas until one of them sends a message.
 							}
