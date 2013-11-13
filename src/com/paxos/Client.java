@@ -72,6 +72,9 @@ public class Client extends Process {
 							Thread.sleep(2000l);
 							String[] vals = temp.split(",");							
 							Request r = new Request(this.processId, clientCommandId++, "INSERT"+i,new BankCommand(CommandEnum.valueOf(vals[0]), vals[1], vals[2], Float.parseFloat(vals[3])));
+							if(CommandEnum.valueOf(vals[0]).equals(CommandEnum.GETBALANCE)) {
+								r.setReadCommand(true);
+							}								
 							PaxosMessage m = new PaxosMessage();
 							m.setRequest(r);
 							m.setSrcId(processId);
@@ -106,7 +109,11 @@ public class Client extends Process {
 				//				}
 
 			} 
-
+			if(PaxosMessageEnum.CLIENTRESP.equals(pMessage.getMessageType())) {
+				writeToLog(this.processId+": Response received from replica "+pMessage.getSrcId()+" for commandId "+pMessage.getRequest().getClientCommandId()+". Response: "+pMessage.getRequest().getCommand());
+				if(pMessage.getRequest().isReadCommand())
+					writeToLog(this.processId+": Balance for the account "+pMessage.getRequest().getbCommand().getSrcAccntId()+" is "+pMessage.getRequest().getbCommand().getAmt());
+			}
 		}
 	}
 

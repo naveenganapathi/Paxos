@@ -3,6 +3,7 @@ package com.paxos.common;
 public class Request {
 	String clientId;
 	int clientCommandId;
+	boolean isReadCommand = false;
 	String command;
 	BankCommand bCommand;
 	public Request(String clientId, int clientCommandId, String command,BankCommand bCommand) {
@@ -80,6 +81,12 @@ public class Request {
 		} else if (!command.equals(other.command))
 			return false;
 		return true;
+	}
+	public boolean isReadCommand() {
+		return isReadCommand;
+	}
+	public void setReadCommand(boolean isReadCommand) {
+		this.isReadCommand = isReadCommand;
 	}
 	
 	
