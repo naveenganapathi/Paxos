@@ -184,6 +184,12 @@ public class Leader extends Process {
 						}
 					}					
 				}
+				if(msg.getMessageType().equals(PaxosMessageEnum.REPLICA_COMMIT)) {
+					//should check if this check is necessary. added this since we are "assuming" asynchronous.
+					if(replicaProcCnt.get(msg.getSrcId()) < msg.getRequest().getClientCommandId()) {
+						replicaProcCnt.put(msg.getSrcId(), msg.getRequest().getClientCommandId());										
+					}
+				}
 				if(msg.getMessageType().equals(PaxosMessageEnum.PREEMPT)) {
 					//	writeToLog(this.processId+" ballot pre-empted!");
 					//	writeToLog("comparing "+ballot+" with "+msg.getBallot()+", res:"+ballot.compareWith(msg.getBallot()));
