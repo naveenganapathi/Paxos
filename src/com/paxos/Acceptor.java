@@ -26,7 +26,7 @@ public class Acceptor extends Process {
 			if(PaxosMessageEnum.P1A.equals(pMessage.getMessageType())) {
 				if((timer == null || timer.hasTimedOut()) && (ballot == null || ballot.compareWith(pMessage.getBallot()) < 0)) {
 					ballot = pMessage.getBallot();
-					timer.setTimeoutInSeconds(pMessage.getLeasePeriod());
+					timer = new Timer(pMessage.getLeasePeriod());
 					timer.start();
 					writeToLog(processId+"adopted ballot:"+ballot);
 					//System.out.println("adopted ballot");

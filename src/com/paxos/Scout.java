@@ -40,7 +40,7 @@ public class Scout extends Process {
 		if(isReadOnly)
 		p1amsg.setLeasePeriod(LEASE_PERIOD_IN_SECONDS);
 		else
-		p1amsg.setLeasePeriod(LEASE_PERIOD_IN_SECONDS);
+		p1amsg.setLeasePeriod(0);
 		
 		Set<String> waitFor = new HashSet<String>();
 		for(String acceptor: acceptors) {
