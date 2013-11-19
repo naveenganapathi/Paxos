@@ -72,16 +72,67 @@ public class Replica extends Process{
 		
 	}
 
+    public void performReadRequest(Request r) throws Exception {
+    	PaxosMessage commit = new PaxosMessage();
+		commit.setRequest(r);
+		
+		commit.setMessageType(PaxosMessageEnum.REPLICA_COMMIT);
+		commit.setSrcId(this.processId);
+		BankCommand bc = r.getbCommand();
+		BankAccount src = accntMap.get(bc.getSrcAccntId());
+		
+		System.out.println(this.processId+" Sending commit message for slot:"+slotNumber+" to all leaders");
+		List<String> leaders = this.main.leaders;
+		for(String leader : leaders) {
+			//writeToLog(this.processId+" proposing to leader!");
+			sendMessage(leader, commit);	
+		}
+
+		writeToLog(this.processId+": Executing GETBALANCE command: Current balance in account "+src.getAccntId()+" is "+src.getBalance());
+		bc.setAmt(src.getBalance());
+		
+		writeToLog(this.processId+" map after perfoming at slot "+slotNumber+" the change "+r+":\n"+accntMap);
+		PaxosMessage clientReply = new PaxosMessage();
+		Request cReq = new Request(r.getClientId(), r.getClientCommandId(), "Request Performed", bc);
+		cReq.setReadCommand(true);
+		clientReply.setMessageType(PaxosMessageEnum.CLIENTRESP);
+		clientReply.setRequest(cReq);
+		clientReply.setSrcId(this.processId);
+		writeToLog(this.processId+" sending response to client "+r.getClientId()+" for "+r.getClientCommandId());
+		sendMessage(r.getClientId(), clientReply);
+    }
+    
 	public void perform(Request r) throws Exception {		
+		
+		PaxosMessage commit = new PaxosMessage();
+		commit.setRequest(r);
+		
+		commit.setMessageType(PaxosMessageEnum.REPLICA_COMMIT);
+		commit.setSrcId(this.processId);
+		commit.setSlot_number(slotNumber);
+		
 		//check if already performed.
 		for(Entry<Integer,Request> entry : decisions.entrySet()) {
 			//writeToLog("inside perform"+entry);
 			if(entry.getKey() < slotNumber && entry.getValue().equals(r)) {
 
 				writeToLog("request already performed returning for slot"+entry.getKey()+", which is before"+slotNumber);
+				System.out.println(this.processId+" Sending commit message for slot:"+slotNumber+" to all leaders");
+				List<String> leaders = this.main.leaders;
+				for(String leader : leaders) {
+					//writeToLog(this.processId+" proposing to leader!");
+					sendMessage(leader, commit);	
+				}
+				
 				slotNumber++;
 				return;
 			}
+		}
+		System.out.println(this.processId+" Sending commit message for slot:"+slotNumber+" to all leaders");
+		List<String> leaders = this.main.leaders;
+		for(String leader : leaders) {
+			//writeToLog(this.processId+" proposing to leader!");
+			sendMessage(leader, commit);	
 		}
 		//writeToLog(this.processId+"performing "+r);
 		//writeToLog(this.processId+" map before perfoming the change "+r+":\n"+accntMap);
@@ -92,10 +143,7 @@ public class Replica extends Process{
 		case DEPOSIT: src.setBalance(src.getBalance()+bc.getAmt()); break;
 		case WITHDRAW: src.setBalance(src.getBalance() - bc.getAmt()); break;
 		case TRANSFER: src.setBalance(src.getBalance() - bc.getAmt()); dest.setBalance(dest.getBalance()+bc.getAmt()); break;
-		case GETBALANCE: 
-			writeToLog(this.processId+": Executing GETBALANCE command: Current balance in account "+src.getAccntId()+" is "+src.getBalance());
-			bc.setAmt(src.getBalance());
-			break;
+		case GETBALANCE: break;
 		}
 		writeToLog(this.processId+" map after perfoming at slot "+slotNumber+" the change "+r+":\n"+accntMap);
 		PaxosMessage clientReply = new PaxosMessage();
@@ -103,20 +151,9 @@ public class Replica extends Process{
 		clientReply.setMessageType(PaxosMessageEnum.CLIENTRESP);
 		clientReply.setRequest(cReq);
 		clientReply.setSrcId(this.processId);
-		writeToLog(this.processId+" sending response to client for "+r.getClientCommandId());
+		writeToLog(this.processId+" sending response to client "+r.getClientId()+" for "+r.getClientCommandId());
 		sendMessage(r.getClientId(), clientReply);
-		if(!r.isReadCommand())
-			slotNumber++;
-		
-		PaxosMessage commit = new PaxosMessage();
-		commit.setRequest(r);
-		commit.setMessageType(PaxosMessageEnum.REPLICA_COMMIT);
-		commit.setSrcId(this.processId);
-		List<String> leaders = this.main.leaders;
-		for(String leader : leaders) {
-			//writeToLog(this.processId+" proposing to leader!");
-			sendMessage(leader, commit);	
-		}
+			slotNumber++;		
 	}
 
 	public void body() throws Exception {
@@ -126,6 +163,10 @@ public class Replica extends Process{
 		while(true && this.alive) {
 			PaxosMessage pMessage = getNextMessage();
 			if(PaxosMessageEnum.PERFORM.equals(pMessage.getMessageType())) {
+				if(pMessage.isReadMessage()) {
+					performReadRequest(pMessage.getRequest());
+					continue;
+				}
 				writeToLog(this.processId+": Received decision for slot : "+pMessage.getSlot_number());
 				if(pMessage.getRequest() == null)
 					writeToLog("message with null request!"+pMessage);

@@ -86,6 +86,12 @@ public class Client extends Process {
 							
 							while(true) {
 								PaxosMessage msg = getNextMessage();
+								//System.out.println("TESTETESTSETETETETET"+msg.getMessageType());
+								if(PaxosMessageEnum.CLIENTRESP.equals(msg.getMessageType())) {
+									writeToLog(this.processId+": Response received from replica "+msg.getSrcId()+" for commandId "+msg.getRequest().getClientCommandId()+". Response: "+msg.getRequest().getCommand());
+									if(msg.getRequest().isReadCommand())
+										writeToLog(this.processId+": Balance for the account "+msg.getRequest().getbCommand().getSrcAccntId()+" is "+msg.getRequest().getbCommand().getAmt());
+								}
 								if(msg.getRequest().getClientId().equals(processId) && msg.getRequest().getClientCommandId() == i) {
 									writeToLog(this.processId+" Got response for request:"+msg.getRequest().getClientCommandId());
 									break;
@@ -107,6 +113,9 @@ public class Client extends Process {
 				//				for(String replica : replicas) {							
 				//					main.sendMessage(replica, m);
 				//				}
+				
+				//System.out.println("TESTETESTSETETETETET"+msg.getMessageType());
+				
 
 			} 
 			if(PaxosMessageEnum.CLIENTRESP.equals(pMessage.getMessageType())) {
@@ -114,6 +123,7 @@ public class Client extends Process {
 				if(pMessage.getRequest().isReadCommand())
 					writeToLog(this.processId+": Balance for the account "+pMessage.getRequest().getbCommand().getSrcAccntId()+" is "+pMessage.getRequest().getbCommand().getAmt());
 			}
+			
 		}
 	}
 

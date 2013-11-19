@@ -21,7 +21,7 @@ public class Main {
 	public final static int nReplicas = 5;
 	public final static int nLeaders = 4;
 	public final static int nRequests = 10;
-	public final static int nClients = 4;
+	public final static int nClients = 2;
 
 	public void initFaultMap(String val[]) {
 		int size = val.length;
@@ -161,7 +161,7 @@ public class Main {
 			PaxosMessage m = new PaxosMessage();
 			m.setMessageType(PaxosMessageEnum.CLIENTINPUT);
 			// Set this value for random msgs; Don't set it if the input is from file.
-			m.setNumClientRequests((i+1)*3);
+			//m.setNumClientRequests((i+1)*3);
 			sendMessage("main",client, m);
 			i++;
 		}

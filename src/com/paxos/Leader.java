@@ -2,8 +2,10 @@ package com.paxos;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.paxos.common.Ballot;
 import com.paxos.common.PValue;
@@ -19,7 +21,7 @@ public class Leader extends Process {
 	ArrayList<String> replicas=new ArrayList<String>();
 	Map<String,Integer> replicaProcCnt;
 	private static int PING_LEADER_TIME = 2;
-	private static int PING_LEADER_REPLY_WAIT_TIME = 2;
+	private static int PING_LEADER_REPLY_WAIT_TIME = 3;
 	private static int LEASE_PERIOD_IN_SECONDS = 15;
 	Ballot ballot;
 	Timer timer;
@@ -28,6 +30,7 @@ public class Leader extends Process {
 	boolean active = false;
 	int currentLeader;
 	Map<Integer,Request> proposals = new HashMap<Integer,Request>();
+	Set<Request> readProposals = new HashSet<Request>();
 
 	public Leader(Main main, String myProcessId, ArrayList<String> acceptors, ArrayList<String> replicas) {
 		this.main=main;
@@ -44,17 +47,18 @@ public class Leader extends Process {
 		currentLeader=0;
 	}
 
-	void setTimerAndStartScout() {
+	void setTimerAndStartScout(PaxosMessage m) {
 		timer = new Timer(LEASE_PERIOD_IN_SECONDS);
 		timer.start();
-		new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,true);
+		ballot = new Ballot(processId, ballot.getBallotId()+1);
+		new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,true,m.getRequest());
 		active = false;
 	}
 	
 	@Override
 	public void body() throws Exception {
 		//	writeToLog("spawned"+this.processId);
-		new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,false);
+		new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,false,null);
 		while(true & this.alive){
 			//System.out.println("ProcessId and current leader:"+this.processId+","+currentLeader);
 			if(("LEADER:"+currentLeader).equalsIgnoreCase(this.processId) ) {
@@ -65,10 +69,15 @@ public class Leader extends Process {
 				if(msg.getMessageType().equals(PaxosMessageEnum.PROPOSE)) {
 					//writeToLog(this.processId+" acquried proposal "+msg.getRequest());
 					if(msg.getRequest().isReadCommand()) {						
-						//create a scout all the time.
-						timer = new Timer(LEASE_PERIOD_IN_SECONDS);
-						timer.start();
-						new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,true);
+						//create a scout all the time.				
+						if(!readProposals.contains(msg.getRequest())) {
+							readProposals.add(msg.getRequest());
+							timer = new Timer(LEASE_PERIOD_IN_SECONDS);
+							timer.start();
+							System.out.println("Obtained a read command!!"+msg.getRequest()+" .Timer started. Creating a scout.");
+							ballot = new Ballot(processId, ballot.getBallotId()+1);
+							new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,true,msg.getRequest());
+						}						
 					} else {
 						if(!proposals.containsKey(msg.getSlot_number())) {
 							//writeToLog(this.processId+": Adding to proposals - "+proposals);
@@ -83,8 +92,11 @@ public class Leader extends Process {
 				}
 				if(msg.getMessageType().equals(PaxosMessageEnum.ADOPTED)) {
 					if(msg.isReadMessage()) {
+						
+						System.out.println(this.processId+" read msg adopted. Lots of work to do!");
 						if(timer.hasTimedOut()) {
-							setTimerAndStartScout();						    
+							System.out.println(this.processId+ "Timer has timed out! trying with a new scout");
+							setTimerAndStartScout(msg);						    
 						} else {
 							active = true;							
 							//get maxSlotNumber
@@ -94,8 +106,10 @@ public class Leader extends Process {
 									maxAdopted = m.getSlot_number();
 							}
 							
+							System.out.println(this.processId+" max adopted message:"+maxAdopted);
 							//allowing Replicas to complete all the pending transactions.
 							try {
+								System.out.println(this.processId+" Sleeping for 5 seconds for the replicas to catch up!");
 								Thread.sleep(5000);
 							} catch (InterruptedException e) {
 								// TODO Auto-generated catch block
@@ -103,19 +117,24 @@ public class Leader extends Process {
 							}
 							
 							//browse through the queue and pick only to commit messages.
+							List<PaxosMessage> toRemove = new ArrayList<PaxosMessage>();
 							for(PaxosMessage pm : messages.list) {
 								if(PaxosMessageEnum.REPLICA_COMMIT.equals(pm.getMessageType())) {
-									if(replicaProcCnt.get(pm.getSrcId()) < pm.getRequest().getClientCommandId()) {
-										replicaProcCnt.put(pm.getSrcId(), pm.getRequest().getClientCommandId());										
+									if(replicaProcCnt.get(pm.getSrcId()) < pm.getSlot_number()) {
+										replicaProcCnt.put(pm.getSrcId(), pm.getSlot_number());										
 									}
-									messages.list.remove(pm);
+									toRemove.add(pm);
 								}
 							}
+							messages.list.removeAll(toRemove);
+							
+							System.out.println("current max msgs processed!"+replicaProcCnt);
 							
 							
 							
 							if(timer.hasTimedOut()) {
-								setTimerAndStartScout();
+								System.out.println(this.processId+ " 2Timer has timed out! trying with a new scout");
+								setTimerAndStartScout(msg);
 							}  else {
 								List<String> aliveReplicas = new ArrayList<String>();
 								for(String replicaId : replicaProcCnt.keySet()) {
@@ -123,14 +142,17 @@ public class Leader extends Process {
 										aliveReplicas.add(replicaId);
 									}
 								}
-								
+								System.out.println(this.processId+" Following replicas have caught up!"+aliveReplicas);
 								for(String replica : aliveReplicas) {
 									if(timer.hasTimedOut()) {
-										setTimerAndStartScout();
+										System.out.println(this.processId+ " 3Timer has timed out! trying with a new scout");
+										setTimerAndStartScout(msg);
 									}
 									PaxosMessage read = new PaxosMessage();
 									read.setSrcId(this.processId);
 									read.setRequest(msg.getRequest());
+									read.setMessageType(PaxosMessageEnum.PERFORM);
+									read.setReadMessage(true);
 									main.sendMessage(this.processId,replica,read);
 									//wait for replica to complete
 									Thread.sleep(2000);
@@ -140,6 +162,7 @@ public class Leader extends Process {
 										if(PaxosMessageEnum.REPLICA_COMMIT.equals(pm.getMessageType())) {
 											if(read.getRequest().getClientCommandId() == pm.getRequest().getClientCommandId()) {
 												messages.list.remove(pm);
+												System.out.println(this.processId+ "read command successfully executed by "+replica);
 												flag = true;
 												break;
 											}											
@@ -148,6 +171,9 @@ public class Leader extends Process {
 									
 									if(flag) {
 										writeToLog("successfully executed read command!");
+										timer.setTimeoutInSeconds(0);
+										new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,false,null);
+										break;
 									}
 								}
 								
@@ -186,10 +212,11 @@ public class Leader extends Process {
 				}
 				if(msg.getMessageType().equals(PaxosMessageEnum.REPLICA_COMMIT)) {
 					//should check if this check is necessary. added this since we are "assuming" asynchronous.
-					if(replicaProcCnt.get(msg.getSrcId()) < msg.getRequest().getClientCommandId()) {
-						replicaProcCnt.put(msg.getSrcId(), msg.getRequest().getClientCommandId());										
+					if(replicaProcCnt.get(msg.getSrcId()) < msg.getSlot_number()) {
+						replicaProcCnt.put(msg.getSrcId(), msg.getSlot_number());										
 					}
 				}
+				
 				if(msg.getMessageType().equals(PaxosMessageEnum.PREEMPT)) {
 					//	writeToLog(this.processId+" ballot pre-empted!");
 					//	writeToLog("comparing "+ballot+" with "+msg.getBallot()+", res:"+ballot.compareWith(msg.getBallot()));
@@ -213,9 +240,10 @@ public class Leader extends Process {
 						ballot = new Ballot(processId, msg.getBallot().getBallotId()+1);
 						writeToLog(this.processId+" trying with new ballot"+ballot);
 						if(msg.isReadMessage()) {
-							setTimerAndStartScout();
+							System.out.println(this.processId+" Read scout terminated. trying again");
+							setTimerAndStartScout(msg);
 						} else {
-							new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,msg.isReadMessage());
+							new Scout(main, "SCOUT:"+ballot.getString(), processId, acceptors, ballot,false,null);
 						}
 						active = false;
 					//}
@@ -243,7 +271,7 @@ public class Leader extends Process {
 				PaxosMessage message = new PaxosMessage();
 				message.setMessageType(PaxosMessageEnum.LEADERCHECK);
 				try {
-					sendMessage("LEADER:"+currentLeader, message);
+					//sendMessage("LEADER:"+currentLeader, message);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

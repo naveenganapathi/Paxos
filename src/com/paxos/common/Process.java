@@ -25,6 +25,7 @@ public abstract class Process extends Thread{
 			writeToLog(this.processId+" caught exception. finishing execution."+e);
 			e.printStackTrace();
 		}
+		System.out.println("Removing processId - "+processId);
 		main.removeProcess(processId);
 	}
 	
