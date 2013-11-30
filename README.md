@@ -1,5 +1,5 @@
 Paxos
 =====
 Project By:
-Naveen
-Vignesh
+Naveen Ganapathi Subramanian & 
+Vignesh Alaguvel
